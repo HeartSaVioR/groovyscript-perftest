@@ -10,7 +10,8 @@ import java.util.Map;
 public class GroovyScriptNativeShell<O> implements GroovyScript<O> {
     private final String expression;
 
-    private transient groovy.lang.Script parsedScript;
+    private transient GroovyShell groovyShell;
+    private transient ThreadLocal<groovy.lang.Script> parsedScript;
 
     public GroovyScriptNativeShell(String expression) {
         this.expression = expression;
@@ -34,10 +35,20 @@ public class GroovyScriptNativeShell<O> implements GroovyScript<O> {
     }
 
     private groovy.lang.Script getParsedScript() {
-        if (parsedScript == null) {
-            GroovyShell groovyShell = new GroovyShell();
-            parsedScript = groovyShell.parse(expression);
+        if (groovyShell == null) {
+            groovyShell = new GroovyShell();
         }
-        return parsedScript;
+
+        if (parsedScript == null) {
+            parsedScript = new ThreadLocal<>();
+        }
+
+        groovy.lang.Script script = parsedScript.get();
+        if (script == null) {
+            script = groovyShell.parse(expression);
+            parsedScript.set(script);
+        }
+
+        return script;
     }
 }
