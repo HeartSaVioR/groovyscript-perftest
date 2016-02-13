@@ -2,6 +2,7 @@ package net.heartsavior;
 
 import groovy.lang.Binding;
 import groovy.lang.GroovyShell;
+import groovy.lang.Script;
 
 import javax.script.ScriptException;
 import java.util.Map;
@@ -37,17 +38,15 @@ public class GroovyScriptNativeShell<O> implements GroovyScript<O> {
 
     private groovy.lang.Script getParsedScript() {
         if (parsedScript == null) {
-            parsedScript = new ThreadLocal<>();
+            parsedScript = new ThreadLocal<groovy.lang.Script>() {
+                @Override
+                protected groovy.lang.Script initialValue() {
+                    return getGroovyShell().parse(expression);
+                }
+            };
         }
 
-        groovy.lang.Script script = parsedScript.get();
-        if (script == null) {
-            GroovyShell shell = getGroovyShell();
-            script = shell.parse(expression);
-            parsedScript.set(script);
-        }
-
-        return script;
+        return parsedScript.get();
     }
 
     private GroovyShell getGroovyShell() {

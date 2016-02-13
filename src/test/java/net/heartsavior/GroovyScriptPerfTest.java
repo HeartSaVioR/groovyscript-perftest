@@ -41,11 +41,10 @@ public class GroovyScriptPerfTest {
     */
 
     // For cache hit of evaluation
-    private Map<String, Object> testParam = new HashMap<>(2);
-    private static final String GROOVY_EXPRESSION = "a > 10 && b < 30";
+    private Map<String, Object> testParam = new HashMap<>(1);
+    private static final String GROOVY_EXPRESSION = "a > 10";
     private Map<String, Object> createParam() {
         testParam.put("a", new Random().nextInt(100));
-        testParam.put("b", new Random().nextInt(100));
         return testParam;
     }
 
