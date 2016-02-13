@@ -5,16 +5,14 @@ import groovy.lang.GroovyShell;
 
 import javax.script.ScriptException;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
 
 
-public class GroovyScriptNativeShell<O> implements GroovyScript<O> {
+public class GroovyScriptNativeShellPerEachThread<O> implements GroovyScript<O> {
     private final String expression;
 
-    private final AtomicReference<GroovyShell> groovyShell = new AtomicReference<>();
     private transient ThreadLocal<groovy.lang.Script> parsedScript;
 
-    public GroovyScriptNativeShell(String expression) {
+    public GroovyScriptNativeShellPerEachThread(String expression) {
         this.expression = expression;
     }
 
@@ -37,27 +35,14 @@ public class GroovyScriptNativeShell<O> implements GroovyScript<O> {
 
     private groovy.lang.Script getParsedScript() {
         if (parsedScript == null) {
-            parsedScript = new ThreadLocal<>();
+            parsedScript = new ThreadLocal<groovy.lang.Script>(){
+                @Override
+                protected groovy.lang.Script initialValue() {
+                    return new GroovyShell().parse(expression);
+                }
+            };
         }
 
-        groovy.lang.Script script = parsedScript.get();
-        if (script == null) {
-            GroovyShell shell = getGroovyShell();
-            script = shell.parse(expression);
-            parsedScript.set(script);
-        }
-
-        return script;
-    }
-
-    private GroovyShell getGroovyShell() {
-        GroovyShell shell = groovyShell.get();
-        if (shell == null) {
-            shell = new GroovyShell();
-            if (!groovyShell.compareAndSet(null, shell)) {
-                shell = groovyShell.get();
-            }
-        }
-        return shell;
+        return parsedScript.get();
     }
 }

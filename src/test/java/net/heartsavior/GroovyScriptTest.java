@@ -49,4 +49,29 @@ public class GroovyScriptTest {
             // no-op, that's what we want
         }
     }
+
+    @Test
+    public void testBindingsAreBoundOnlyWhenEvaluationPerEachThread() {
+        String groovyExpression = "a > 10 && b < 30";
+
+        GroovyScriptNativeShellPerEachThread<Boolean> groovyScript = new GroovyScriptNativeShellPerEachThread<>(groovyExpression);
+        HashMap<String, Object> params = new HashMap<>();
+        params.put("a", 20);
+        params.put("b", 10);
+        try {
+            groovyScript.evaluate(params);
+        } catch (ScriptException e) {
+            e.printStackTrace();
+            Assert.fail("It shouldn't throw ScriptException");
+        }
+
+        params.clear();
+        params.put("no_related_field", 3);
+        try {
+            groovyScript.evaluate(params);
+            Assert.fail("It should not evaluate correctly");
+        } catch (ScriptException e) {
+            // no-op, that's what we want
+        }
+    }
 }

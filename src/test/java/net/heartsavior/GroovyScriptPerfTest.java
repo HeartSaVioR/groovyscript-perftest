@@ -24,9 +24,30 @@ public class GroovyScriptPerfTest {
             new HtmlReportModule(),
             new CSVSummaryReportModule());
 
+    // For avoiding cache hit of evaluation
+    /*
     private Map<String, Object> testParam = new HashMap<>(7);
+    private static final String GROOVY_EXPRESSION = "a > 10 && b < 30 && c > 20 && d < 40 && e > 50 && f < 70 && g > 90";
+    private Map<String, Object> createParam() {
+        testParam.put("a", new Random().nextInt(100));
+        testParam.put("b", new Random().nextInt(100));
+        testParam.put("c", new Random().nextInt(100));
+        testParam.put("d", new Random().nextInt(100));
+        testParam.put("e", new Random().nextInt(100));
+        testParam.put("f", new Random().nextInt(100));
+        testParam.put("g", new Random().nextInt(100));
+        return testParam;
+    }
+    */
 
-    public static final String GROOVY_EXPRESSION = "a > 10 && b < 30 && c > 20 && d < 40 && e > 50 && f < 70 && g > 90";
+    // For cache hit of evaluation
+    private Map<String, Object> testParam = new HashMap<>(2);
+    private static final String GROOVY_EXPRESSION = "a > 10 && b < 30";
+    private Map<String, Object> createParam() {
+        testParam.put("a", new Random().nextInt(100));
+        testParam.put("b", new Random().nextInt(100));
+        return testParam;
+    }
 
     private static GroovyScriptEngineImpl groovyScriptEnginePreCompile = new GroovyScriptEngineImpl();
     private static GroovyScriptEngineImpl groovyScriptEngineNoPreCompile = new GroovyScriptEngineImpl();
@@ -35,6 +56,7 @@ public class GroovyScriptPerfTest {
     private static GroovyScript<Boolean> groovyScriptNoPreCompile = new GroovyScriptNoPreCompile<>(GROOVY_EXPRESSION,
             groovyScriptEngineNoPreCompile);
     private static GroovyScript<Boolean> groovyScriptNativeShell = new GroovyScriptNativeShell<>(GROOVY_EXPRESSION);
+    private static GroovyScript<Boolean> groovyScriptNativeShellPerEachThread = new GroovyScriptNativeShellPerEachThread<>(GROOVY_EXPRESSION);
 
     @Test
     @PerfTest(duration = TEST_DURATION_MILLIS, threads = 1, warmUp = WARMUP_MILLIS)
@@ -54,6 +76,24 @@ public class GroovyScriptPerfTest {
         runTest(groovyScriptNativeShell);
     }
 
+    @Test
+    @PerfTest(duration = TEST_DURATION_MILLIS, threads = 1, warmUp = WARMUP_MILLIS)
+    public void testEvaluateWithGroovyScriptNativeShellPerEachThread() {
+        runTest(groovyScriptNativeShellPerEachThread);
+    }
+
+    @Test
+    @PerfTest(duration = TEST_DURATION_MILLIS, threads = 100, warmUp = WARMUP_MILLIS)
+    public void testEvaluateWithGroovyScriptNativeShellInMultipleThreads() {
+        runTest(groovyScriptNativeShell);
+    }
+
+    @Test
+    @PerfTest(duration = TEST_DURATION_MILLIS, threads = 100, warmUp = WARMUP_MILLIS)
+    public void testEvaluateWithGroovyScriptNativeShellPerEachThreadInMultipleThreads() {
+        runTest(groovyScriptNativeShellPerEachThread);
+    }
+
     private void runTest(GroovyScript<Boolean> groovyScript) {
         for (int curr = 0 ; curr < OPERATIONS_PER_TEST ; curr++) {
             Map<String, Object> param = createParam();
@@ -65,14 +105,4 @@ public class GroovyScriptPerfTest {
         }
     }
 
-    private Map<String, Object> createParam() {
-        testParam.put("a", new Random().nextInt(100));
-        testParam.put("b", new Random().nextInt(100));
-        testParam.put("c", new Random().nextInt(100));
-        testParam.put("d", new Random().nextInt(100));
-        testParam.put("e", new Random().nextInt(100));
-        testParam.put("f", new Random().nextInt(100));
-        testParam.put("g", new Random().nextInt(100));
-        return testParam;
-    }
 }
